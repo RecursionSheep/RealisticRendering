@@ -6,3 +6,7 @@ The code is based on [smallpt](http://www.kevinbeason.com/smallpt/ "smallpt").
 5/10
 
 Upload path tracing baseline.
+
+5/15
+
+Start working on PPM.
