@@ -11,6 +11,15 @@ Vector Vector::operator -(const Vector &v) const {
 Vector Vector::operator *(double k) const {
 	return Vector(k * x, k * y, k * z);
 }
+Vector& Vector::operator +=(const Vector &v) {
+	return *this = *this + v;
+}
+bool Vector::operator <(const Vector &v) const {
+	return x < v.x && y < v.y && z < v.z;
+}
+bool Vector::operator >(const Vector &v) const {
+	return x > v.x && y > v.y && z > v.z;
+}
 Vector Vector::mul(const Vector &v) const {
 	return Vector(x * v.x, y * v.y, z * v.z);
 }
@@ -25,6 +34,13 @@ double Vector::len() const {
 }
 Vector& Vector::unit() {
 	return *this = *this * (1 / sqrt(x * x + y * y + z * z));
+}
+
+Vector min(const Vector &a, const Vector &b) {
+	return Vector(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
+}
+Vector max(const Vector &a, const Vector &b) {
+	return Vector(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
 }
 
 Ray::Ray(Vector _o, Vector _d): o(_o), d(_d) {}
