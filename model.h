@@ -19,7 +19,8 @@ Shape* model[] = {
 	new Sphere(1e5, Vector(50, 1e5, 81.6), Texture(nullptr, Vector(), Vector(.75, .75, .75), DIFF)),
 	new Sphere(1e5, Vector(50, -1e5 + 81.6, 81.6), Texture(nullptr, Vector(), Vector(.75, .75, .75), DIFF)),
 	new Sphere(16.5, Vector(27, 16.5, 47), Texture(nullptr, Vector(), Vector(1, 1, 1) * .999, SPEC)),
-	//new Sphere(16.5, Vector(73, 16.5, 78), Texture(nullptr, Vector(), Vector(1, 1, 1) * .999, REFR)),
-	new bezierSpin(Vector(73, 0, 88), curve, Texture("vase2.jpg", Vector(), Vector(.75, .25, .25), DIFF)),
-	new Sphere(600, Vector(50, 681.6 - .27, 91.6), Texture(nullptr, Vector(12, 12, 12), Vector(), DIFF))
+	new Sphere(16.5, Vector(73, 16.5, 78), Texture(nullptr, Vector(), Vector(1, 1, 1) * .999, REFR)),
+	//new bezierSpin(Vector(73, 0, 88), curve, Texture("vase2.jpg", Vector(), Vector(.75, .25, .25), DIFF)),
+	new Rect(Vector(40, 81.6 - .27, 101.6), Vector(20, 0, 0), Vector(0, 0, -20), Texture(nullptr, Vector(.95, .95, .95), Vector(.95, .95, .95), DIFF))
+	//new Sphere(600, Vector(50, 681.6 - .27, 91.6), Texture(nullptr, Vector(12, 12, 12), Vector(), DIFF))
 };

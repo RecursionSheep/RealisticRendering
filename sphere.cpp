@@ -29,3 +29,7 @@ Vector Sphere::normal(const Vector &x, const Vector &norm) {
 Vector Sphere::getColor(const Vector &x, double a1, double a2) {
 	return tex.color;
 }
+
+Ray Sphere::getPhoton() {
+	return Ray(Vector(0, 0, 0), Vector(0, 0, 0));
+}

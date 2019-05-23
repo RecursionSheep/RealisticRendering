@@ -70,3 +70,7 @@ Vector bezierSpin::normal(const Vector &x, const Vector &norm) {
 Vector bezierSpin::getColor(const Vector &x, double a1, double a2) {
 	return tex.getColor(a1, a2);
 }
+
+Ray bezierSpin::getPhoton() {
+	return Ray(Vector(0, 0, 0), Vector(0, 0, 0));
+}

@@ -1,14 +1,15 @@
 #include <bits/stdc++.h>
 
-#include "rt.h"
+#include "render.h"
 
 using namespace std;
 
 int main() {
-	int width = 1024, height = 768, sampling = 80;
+	int width = 1024, height = 768, sampling = 20;
 	Vector **canvas = new Vector*[height];
 	for (int i = 0; i < height; i++) canvas[i] = new Vector[width];
-	RayTracing(canvas, width, height, sampling);
+	//PathTracing(canvas, width, height, sampling);
+	ProgressivePhotonMapping(canvas, width, height, 500000, 100);
 	FILE *f = fopen("image.ppm", "w");
 	fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
 	for (int i = height - 1; i >= 0; i--)

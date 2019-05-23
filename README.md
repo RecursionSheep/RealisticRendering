@@ -10,3 +10,9 @@ Upload path tracing baseline.
 5/15
 
 Start working on PPM.
+
+5/23
+
+Update PPM.
+
+![avatar](https://github.com/RecursionSheep/RealisticRendering/blob/master/results/image.png)

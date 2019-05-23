@@ -29,3 +29,12 @@ Vector Rect::getColor(const Vector &x, double a1, double a2) {
 	double alpha = (x - p).dot(w) / w.len() / w.len(), beta = (x - p).dot(h) / h.len() / h.len();
 	return tex.getColor(alpha, beta);
 }
+
+Ray Rect::getPhoton() {
+	Vector o = p + w * randR() + h * randR();
+	Vector nl = h.cross(w).unit();
+	double r1 = 2 * pi * randR(), r2 = randR(), r2s = sqrt(r2);
+	Vector u = ((fabs(nl.x) > .1 ? Vector(0, 1) : Vector(1)).cross(nl)).unit(), v = nl.cross(u);
+	Vector d = (u * cos(r1) * r2s + v * sin(r1) * r2s + nl * sqrt(1 - r2)).unit();
+	return Ray(o, d);
+}

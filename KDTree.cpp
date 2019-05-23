@@ -5,6 +5,7 @@
 KDTreeNode::KDTreeNode(hitPoint *_hit): hit(_hit) {
 	minBound = _hit->pos - Vector(_hit->rad, _hit->rad, _hit->rad);
 	maxBound = _hit->pos + Vector(_hit->rad, _hit->rad, _hit->rad);
+	photonCnt = photonTot = 0;
 	lch = rch = nullptr;
 }
 
@@ -46,27 +47,46 @@ KDTreeNode* KDTree::build(hitPoint **p, int l, int r, int dim) {
 	return root;
 }
 
-void KDTree::query(KDTreeNode *node, const hitPoint &p, Vector **canvas, double **prob) {
+void KDTree::query(KDTreeNode *node, const hitPoint &p, Vector **canvas, double **cnt) {
 	if (((node->hit->pos - p.pos).len() <= node->hit->rad) && (node->hit->dir.dot(p.dir) >= -1e-5)) {
-		canvas[node->hit->indexY][node->hit->indexX] += node->hit->col.dot(p.col);
-		prob[node->hit->indexY][node->hit->indexX] += p.prob * node->hit->prob;
+		node->photonCnt++;
+		canvas[node->hit->indexY][node->hit->indexX] += node->hit->col.mul(p.col) * p.prob * node->hit->prob;
+		cnt[node->hit->indexY][node->hit->indexX] += p.prob * node->hit->prob;
 	}
 	if (node->lch != nullptr) {
 		KDTreeNode *child = node->lch;
-		if (p.pos > child->minBound - Vector(1e-5, 1e-5, 1e-5) && p.pos < child->maxBound + Vector(1e-5, 1e-5, 1e-5)) query(child, p, canvas, prob);
+		if (p.pos > child->minBound - Vector(1e-5, 1e-5, 1e-5) && p.pos < child->maxBound + Vector(1e-5, 1e-5, 1e-5)) query(child, p, canvas, cnt);
 	}
 	if (node->rch != nullptr) {
 		KDTreeNode *child = node->rch;
-		if (p.pos > child->minBound - Vector(1e-5, 1e-5, 1e-5) && p.pos < child->maxBound + Vector(1e-5, 1e-5, 1e-5)) query(child, p, canvas, prob);
+		if (p.pos > child->minBound - Vector(1e-5, 1e-5, 1e-5) && p.pos < child->maxBound + Vector(1e-5, 1e-5, 1e-5)) query(child, p, canvas, cnt);
 	}
+}
+
+void KDTree::modify(KDTreeNode *node) {
+	if (node->photonTot != 0) {
+		node->hit->rad *= sqrt((node->photonTot + alpha * node->photonCnt) / (node->photonTot + node->photonCnt));
+		node->photonTot += (int)(alpha * node->photonCnt);
+		node->photonCnt = 0;
+	} else {
+		node->photonTot = node->photonCnt;
+		node->photonCnt = 0;
+	}
+	if (node->lch != nullptr) modify(node->lch);
+	if (node->rch != nullptr) modify(node->rch);
+	node->update();
 }
 
 void KDTree::buildTree(hitPoint **p, int hitNum) {
 	root = build(p, 0, hitNum - 1, 0);
 }
 
-void KDTree::queryPoint(const hitPoint &p, Vector **canvas, double **prob) {
-	query(root, p, canvas, prob);
+void KDTree::queryPoint(const hitPoint &p, Vector **canvas, double **cnt) {
+	query(root, p, canvas, cnt);
+}
+
+void KDTree::modifyRadius() {
+	modify(root);
 }
 
 void KDTree::deleteTree() {
