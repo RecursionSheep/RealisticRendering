@@ -32,15 +32,17 @@ double bezierSpin::intersect(const Ray &r, Vector &norm, double &w1, double &w2)
 	if (t1 <= 0) return -1;
 	bool converge = false;
 	Vector sol(1e100);
-	int it_num = 5;
+	int it_num = 25, sqrt_it_num = 5;
 	for (int it = 0; it < it_num; it++) {
-		Vector x(t1, (double)it / it_num, (double)it / it_num * pi * 2);
-		for (int k = 0; k < 20; k++) {
+		Vector x(t1, (double)it / sqrt_it_num, (double)it / sqrt_it_num * pi * 2);
+		while (x.y > 1.) x.y -= 1.;
+		while (x.z > 2 * pi) x.z -= 2 * pi;
+		for (int k = 0; k < 30; k++) {
 			Vector2D pos = curve->getPos(x.y);
 			Vector2D dir = curve->getJacobian(x.y);
 			Vector f = r.o + r.d * x.x - getPos(x.y, x.z);
 			Vector a1 = r.d, a2 = Vector(-dir.x * cos(x.z), -dir.y, -dir.x * sin(x.z)), a3 = Vector(pos.x * sin(x.z), 0, -pos.x * cos(x.z));
-			if (fabs(f.x) < 1e-4 && fabs(f.y) < 1e-4 && fabs(f.z) < 1e-4) {
+			if (fabs(f.x) < 1e-5 && fabs(f.y) < 1e-5 && fabs(f.z) < 1e-5) {
 				if (x.y < 0 || x.y > 1 || x.x < 0) break;
 				if (x.x < sol.x - 1e-3) {
 					w2 = x.y; w1 = x.z / 2 / pi;
@@ -55,8 +57,7 @@ double bezierSpin::intersect(const Ray &r, Vector &norm, double &w1, double &w2)
 			if (fabs(dom) < 1e-4) break;
 			Vector delta(f.cross(a2).dot(a3), a1.cross(f).dot(a3), a1.cross(a2).dot(f));
 			delta = delta * (1. / dom);
-			x = x - delta;
-			if (x.x < -10 && delta.x > 0) break;
+			x = x - delta * .9;
 		}
 	}
 	if (converge) return sol.x;

@@ -9,6 +9,8 @@
 #include "hitPoint.h"
 #include "model.h"
 
+const double aperture = 0;
+
 inline bool findHit(const Ray &r, double &mind, int &id, Vector &norm, double &a1, double &a2) {
 	int n = model_num;
 	double inf = mind = 1e20;
@@ -74,7 +76,8 @@ void PathTracing(Vector **canvas, int width, int height, int sampling) {
 						double r1 = 2 * randR(), dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
 						double r2 = 2 * randR(), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
 						Vector d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) + cy * (((sy + .5 + dy) / 2 + y) / height - .5) + camera.d;
-						r = r + radiance(Ray(camera.o + d * 140, d.unit()), 0) * (1.0 / sampling);
+						Vector pos = camera.o + d * 140, loc = camera.o + Vector(randR() - .5, randR() - .5, 0) * 2 * aperture;
+						r = r + radiance(Ray(pos, (pos - loc).unit()), 0) * (1.0 / sampling);
 					}
 					canvas[y][x] += Vector(clamp(r.x), clamp(r.y), clamp(r.z)) * 0.25;
 				}
@@ -84,51 +87,50 @@ void PathTracing(Vector **canvas, int width, int height, int sampling) {
 	}
 }
 
-std::vector<hitPoint> radiance1(const Ray &_r, int depth, double prob, Vector col, int indexX, int indexY) {
+void radiance1(const Ray &_r, int depth, double prob, Vector col, int indexX, int indexY, std::vector<hitPoint> *hitpoints) {
 	Ray r = _r;
 	r.o = r.o + r.d * 1e-3;
 	double dist;
 	int id = 0;
 	Vector norm;
 	double a1, a2;
-	std::vector<hitPoint> hitpoints;
-	if (!findHit(r, dist, id, norm, a1, a2)) return hitpoints;
+	if (!findHit(r, dist, id, norm, a1, a2)) return;
 	Shape *obj = model[id];
 	Vector x = r.o + r.d * dist;
 	Vector n = obj->normal(x, norm), nl = n.dot(r.d) < 0 ? n : n * -1, f = obj->getColor(x, a1, a2);
 	double p = std::max(f.x, std::max(f.y, f.z));
-	if (p < 1e-4 || prob < 1e-4) return hitpoints;
+	if (p < 1e-4 || prob < 1e-4) return;
 	depth++;
 	if (depth > 5)
-		if (randR() < p && depth < 30) f = f * (1. / p); else return hitpoints;
+		if (randR() < p && depth < 30) f = f * (1. / p); else return;
 	if (obj->tex.ref == DIFF) {
-		hitpoints.push_back(hitPoint(x, nl, col.mul(f), indexX, indexY, prob));
-		return hitpoints;
+#pragma omp critical
+		hitpoints->push_back(hitPoint(x, nl, col.mul(f), indexX, indexY, prob));
+		return;
 	} else if (obj->tex.ref == SPEC) {
-		hitpoints = radiance1(Ray(x, r.d - n * 2 * n.dot(r.d)), depth, prob, col.mul(f), indexX, indexY);
-		return hitpoints;
+		radiance1(Ray(x, r.d - n * 2 * n.dot(r.d)), depth, prob, col.mul(f), indexX, indexY, hitpoints);
+		return;
 	}
 	Ray reflRay(x, r.d - n * 2 * n.dot(r.d));
 	bool into = n.dot(nl) > 0;
 	double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = r.d.dot(nl), cos2t;
 	if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) {
-		hitpoints = radiance1(reflRay, depth, prob, col.mul(f), indexX, indexY);
-		return hitpoints;
+		radiance1(reflRay, depth, prob, col.mul(f), indexX, indexY, hitpoints);
+		return;
 	}
 	Vector tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).unit();
 	double a = nt - nc, b = nt + nc, R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir.dot(n));
 	double Re = R0 + (1 - R0) * c * c * c * c * c, Tr = 1 - Re, P = .25 + .5 * Re, RP = Re / P, TP = Tr / (1 - P);
 	if (depth <= 2) {
-		std::vector<hitPoint> temp = radiance1(reflRay, depth, prob * Re, col.mul(f), indexX, indexY);
-		hitpoints = radiance1(Ray(x, tdir), depth, prob * Tr, col.mul(f), indexX, indexY);
-		hitpoints.insert(hitpoints.end(), temp.begin(), temp.end());
-		return hitpoints;
+		radiance1(reflRay, depth, prob * Re, col.mul(f), indexX, indexY, hitpoints);
+		radiance1(Ray(x, tdir), depth, prob * Tr, col.mul(f), indexX, indexY, hitpoints);
+		return;
 	} else {
 		if (randR() < P)
-			hitpoints = radiance1(reflRay, depth, prob * RP, col.mul(f), indexX, indexY);
+			radiance1(reflRay, depth, prob * RP, col.mul(f), indexX, indexY, hitpoints);
 		else
-			hitpoints = radiance1(Ray(x, tdir), depth, prob * TP, col.mul(f), indexX, indexY);
-		return hitpoints;
+			radiance1(Ray(x, tdir), depth, prob * TP, col.mul(f), indexX, indexY, hitpoints);
+		return;
 	}
 }
 
@@ -187,8 +189,7 @@ void ProgressivePhotonMapping(Vector **canvas, int width, int height, int photon
 	Vector cx = Vector(width * .5135 / height), cy = (cx.cross(camera.d)).unit() * .5135, r;
 	fprintf(stderr, "Ray tracing phase %5.2f%%", 0.);
 	std::vector<hitPoint> points;
-	const double aperture = .25;
-#pragma omp parallel for schedule(dynamic, 1) private(r)
+#pragma omp parallel for schedule(dynamic, 1)
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			//printf("%d %d\n", x, y);
@@ -197,10 +198,8 @@ void ProgressivePhotonMapping(Vector **canvas, int width, int height, int photon
 					double r1 = 2 * randR(), dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
 					double r2 = 2 * randR(), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
 					Vector d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) + cy * (((sy + .5 + dy) / 2 + y) / height - .5) + camera.d;
-					Vector pos = camera.o + d * 140, loc = camera.o + Vector(randR() * 1.05 - .5, randR() - .5, 0) * 2 * aperture;
-					std::vector<hitPoint> newpoints = radiance1(Ray(pos, (pos - loc).unit()), 0, .25, Vector(1., 1., 1.), x, y);
-#pragma omp critical
-					points.insert(points.end(), newpoints.begin(), newpoints.end());
+					Vector pos = camera.o + d * 140, loc = camera.o + Vector(randR() - .5, randR() - .5, 0) * 2 * aperture;
+					radiance1(Ray(pos, (pos - loc).unit()), 0, .25, Vector(1., 1., 1.), x, y, &points);
 				}
 		}
 #pragma omp critical

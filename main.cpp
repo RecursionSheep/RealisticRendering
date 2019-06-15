@@ -5,7 +5,7 @@
 using namespace std;
 
 int main() {
-	int width = 1024, height = 768, sampling = 20;
+	int width = 1024, height = 768, sampling = 50;
 	Vector **canvas = new Vector*[height];
 	for (int i = 0; i < height; i++) canvas[i] = new Vector[width];
 	//PathTracing(canvas, width, height, sampling);

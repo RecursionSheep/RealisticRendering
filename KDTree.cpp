@@ -50,6 +50,8 @@ KDTreeNode* KDTree::build(hitPoint **p, int l, int r, int dim) {
 void KDTree::query(KDTreeNode *node, const hitPoint &p, Vector **canvas, double **cnt) {
 	if (((node->hit->pos - p.pos).len() <= node->hit->rad) && (node->hit->dir.dot(p.dir) >= -1e-5)) {
 		node->photonCnt++;
+		//std::cout << p.col.x << ' ' << p.col.y << ' ' << p.col.z << '\n';
+		//std::cout << node->hit->col.mul(p.col).x << ' ' << node->hit->col.mul(p.col).y << ' ' << node->hit->col.mul(p.col).z << '\n';
 		canvas[node->hit->indexY][node->hit->indexX] += node->hit->col.mul(p.col) * p.prob * node->hit->prob;
 		cnt[node->hit->indexY][node->hit->indexX] += p.prob * node->hit->prob;
 	}
