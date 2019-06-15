@@ -15,4 +15,8 @@ Start working on PPM.
 
 Update PPM.
 
+6/15
+
+Fix bugs.
+
 ![avatar](https://github.com/RecursionSheep/RealisticRendering/blob/master/results/image.png)
