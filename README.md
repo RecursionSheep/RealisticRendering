@@ -20,3 +20,5 @@ Update PPM.
 Fix bugs.
 
 ![avatar](https://github.com/RecursionSheep/RealisticRendering/blob/master/results/image.png)
+
+![avatar](https://github.com/RecursionSheep/RealisticRendering/blob/master/results/final3.png)
